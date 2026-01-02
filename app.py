@@ -1,12 +1,18 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 import sqlite3
 import json
 from datetime import datetime
 import os
+import hashlib
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.environ.get('SECRET_KEY', 'poker-splitwise-secret-key-2026')
+CORS(app, supports_credentials=True)
+
+# Admin credentials (hashed password)
+ADMIN_USERNAME = 'sri'
+ADMIN_PASSWORD_HASH = hashlib.sha256('srii'.encode()).hexdigest()
 
 # Database setup
 DB_FILE = 'poker_tracker.db'
@@ -57,10 +63,44 @@ def points_to_dollars(points):
     """Convert points to dollars (1000 points = $5)"""
     return round((points / 1000) * 5, 2)
 
+def is_admin():
+    """Check if current user is admin"""
+    return session.get('is_admin', False)
+
 @app.route('/')
 def index():
     """Render main dashboard"""
     return render_template('index.html')
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Admin login"""
+    data = request.json
+    username = data.get('username', '')
+    password = data.get('password', '')
+    
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    
+    if username == ADMIN_USERNAME and password_hash == ADMIN_PASSWORD_HASH:
+        session['is_admin'] = True
+        session['username'] = username
+        return jsonify({'success': True, 'message': 'Login successful', 'isAdmin': True})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """Admin logout"""
+    session.clear()
+    return jsonify({'success': True, 'message': 'Logged out'})
+
+@app.route('/api/auth/status', methods=['GET'])
+def auth_status():
+    """Check authentication status"""
+    return jsonify({
+        'isAdmin': is_admin(),
+        'username': session.get('username', None)
+    })
 
 @app.route('/api/players', methods=['GET'])
 def get_players():
@@ -89,7 +129,10 @@ def get_players():
 
 @app.route('/api/players', methods=['POST'])
 def add_player():
-    """Add new player"""
+    """Add new player (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
     data = request.json
     name = data.get('name', '').strip()
     
@@ -118,7 +161,10 @@ def add_player():
 
 @app.route('/api/players/<int:player_id>/points', methods=['POST'])
 def add_points(player_id):
-    """Add points to a player"""
+    """Add points to a player (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
     data = request.json
     points_added = data.get('points', 0)
     
@@ -229,7 +275,10 @@ def get_stats():
 
 @app.route('/api/players/<int:player_id>', methods=['DELETE'])
 def delete_player(player_id):
-    """Delete a player and their history"""
+    """Delete a player and their history (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
     conn = get_db_connection()
     c = conn.cursor()
     
@@ -241,9 +290,44 @@ def delete_player(player_id):
     
     return jsonify({'success': True}), 200
 
+@app.route('/api/history/<int:history_id>', methods=['DELETE'])
+def delete_history_entry(history_id):
+    """Delete a single history entry and update player total (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # Get the history entry details
+    c.execute('SELECT player_id, points_added FROM history WHERE id = ?', (history_id,))
+    history = c.fetchone()
+    
+    if not history:
+        conn.close()
+        return jsonify({'error': 'History entry not found'}), 404
+    
+    player_id = history['player_id']
+    points_to_reverse = history['points_added']
+    
+    # Update player total (reverse the points)
+    c.execute('UPDATE players SET base_total = base_total - ? WHERE id = ?', 
+              (points_to_reverse, player_id))
+    
+    # Delete the history entry
+    c.execute('DELETE FROM history WHERE id = ?', (history_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'reversed_points': points_to_reverse}), 200
+
 @app.route('/api/history/clear', methods=['DELETE'])
 def clear_all_history():
-    """Clear all history"""
+    """Clear all history (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
     conn = get_db_connection()
     c = conn.cursor()
     c.execute('DELETE FROM history')
@@ -265,8 +349,8 @@ def get_player_details(player_id):
         conn.close()
         return jsonify({'error': 'Player not found'}), 404
     
-    # Get all history for this player
-    c.execute('''SELECT points_added, total_after, timestamp 
+    # Get all history for this player (including id for deletion)
+    c.execute('''SELECT id, points_added, total_after, timestamp 
                  FROM history WHERE player_id = ? 
                  ORDER BY timestamp DESC''', (player_id,))
     history = c.fetchall()
@@ -295,6 +379,7 @@ def get_player_details(player_id):
             'win_rate': round((total_wins / total_games * 100), 1) if total_games > 0 else 0
         },
         'history': [{
+            'id': h['id'],
             'points_added': h['points_added'],
             'total_after': h['total_after'],
             'dollar_after': points_to_dollars(h['total_after']),

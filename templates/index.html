@@ -424,6 +424,27 @@
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
         }
 
+        .btn-delete-history {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-history:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-small {
+            padding: 4px 8px !important;
+            font-size: 0.75em !important;
+        }
+
         .player-actions {
             display: flex;
             align-items: center;
@@ -1146,8 +1167,19 @@
                 <h1>🎰 Poker Splitwise Pro</h1>
                 <p>Smart settlement tracker for your poker nights</p>
             </div>
-            <div class="conversion-badge">
-                💰 1000 Points = $5
+            <div class="header-right" style="display: flex; gap: 10px; align-items: center;">
+                <div id="adminStatus" style="display: none; color: #10b981; font-weight: 600; font-size: 0.85em;">
+                    👑 Admin: <span id="adminName"></span>
+                </div>
+                <button id="loginBtn" onclick="showLoginModal()" class="btn btn-primary" style="padding: 8px 14px; font-size: 0.8em;">
+                    🔐 Admin Login
+                </button>
+                <button id="logoutBtn" onclick="logout()" class="btn btn-danger" style="padding: 8px 14px; font-size: 0.8em; display: none;">
+                    🚪 Logout
+                </button>
+                <div class="conversion-badge">
+                    💰 1000 Points = $5
+                </div>
             </div>
         </div>
 
@@ -1194,7 +1226,7 @@
                 </div>
             </div>
 
-            <div class="add-player-form">
+            <div class="add-player-form" id="addPlayerForm">
                 <input type="text" id="playerInput" placeholder="Enter new player name..." onkeypress="if(event.key==='Enter') addPlayer()">
                 <button class="btn btn-primary" onclick="addPlayer()">➕ Add Player</button>
                 <button class="btn btn-export" onclick="exportData()">📥 Export CSV</button>
@@ -1237,7 +1269,31 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal" style="max-width: 350px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);">
+                <h2 style="color: white;">🔐 Admin Login</h2>
+                <button class="modal-close" onclick="closeLoginModal()" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="loginError" style="display: none; background: #fee2e2; color: #ef4444; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85em;"></div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151; font-size: 0.9em;">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95em; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151; font-size: 0.9em;">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95em; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'" onkeypress="if(event.key==='Enter') login()">
+                </div>
+                <button onclick="login()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95em; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    🚀 Login as Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Modal -->
     <div class="modal-overlay" id="playerModal">
         <div class="modal">
             <div class="modal-header">
@@ -1252,8 +1308,10 @@
         const API_URL = '/api';
         let allPlayers = [];
         let focusedInputId = null;
+        let isAdmin = false;
 
         function init() {
+            checkAuthStatus();
             loadPlayers();
             loadStats();
             loadHistory();
@@ -1266,9 +1324,128 @@
             }, 10000);
         }
 
+        // Auth Functions
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+                const data = await response.json();
+                isAdmin = data.isAdmin;
+                updateUIForAuth();
+            } catch (error) {
+                console.error('Auth check error:', error);
+                isAdmin = false;
+                updateUIForAuth();
+            }
+        }
+
+        function updateUIForAuth() {
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const adminStatus = document.getElementById('adminStatus');
+            const adminName = document.getElementById('adminName');
+            
+            if (isAdmin) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-flex';
+                adminStatus.style.display = 'block';
+                adminName.textContent = 'Sri';
+                document.body.classList.add('admin-mode');
+            } else {
+                loginBtn.style.display = 'inline-flex';
+                logoutBtn.style.display = 'none';
+                adminStatus.style.display = 'none';
+                document.body.classList.remove('admin-mode');
+            }
+            // Re-render to show/hide admin controls
+            if (allPlayers.length > 0) {
+                renderPlayers(allPlayers);
+            }
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('loginUsername').focus();
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!username || !password) {
+                errorDiv.textContent = '⚠️ Please enter both username and password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    isAdmin = true;
+                    closeLoginModal();
+                    updateUIForAuth();
+                    showToast('✅ Welcome Admin! You now have full access.', 'success');
+                } else {
+                    errorDiv.textContent = '❌ Invalid username or password';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = '❌ Login failed. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                isAdmin = false;
+                updateUIForAuth();
+                showToast('👋 Logged out successfully', 'info');
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 10px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#6366f1'};
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
         async function loadPlayers() {
             try {
-                const response = await fetch(`${API_URL}/players`);
+                const response = await fetch(`${API_URL}/players`, { credentials: 'include' });
                 allPlayers = await response.json();
                 renderPlayers(allPlayers);
                 calculateSettlements(allPlayers);
@@ -1322,6 +1499,7 @@
                             <button class="btn-history" onclick="openPlayerDetails(${player.id})" title="View History">📊</button>
                         </div>
                         <div class="player-actions">
+                            ${isAdmin ? `
                             <div class="points-input-group">
                                 <input type="number" id="points-${player.id}" placeholder="Enter pts"
                                     onfocus="focusedInputId='points-${player.id}'"
@@ -1329,7 +1507,8 @@
                                     onkeypress="if(event.key==='Enter') addPoints(${player.id})">
                                 <button class="btn-add" onclick="addPoints(${player.id})">➕</button>
                             </div>
-                            <button class="btn btn-danger" onclick="deletePlayer(${player.id})">🗑️</button>
+                            <button class="btn btn-danger btn-small" onclick="deletePlayer(${player.id})" title="Delete Player">🗑️</button>
+                            ` : `<span style="color: #94a3b8; font-size: 0.75em;">🔒 Login to edit</span>`}
                         </div>
                     </div>
                 `;
@@ -1432,6 +1611,12 @@
         }
 
         async function addPlayer() {
+            if (!isAdmin) {
+                showToast('🔒 Admin login required to add players', 'error');
+                showLoginModal();
+                return;
+            }
+            
             const input = document.getElementById('playerInput');
             const name = input.value.trim();
             if (!name) { alert('Enter player name'); return; }
@@ -1440,13 +1625,17 @@
                 const response = await fetch(`${API_URL}/players`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ name })
                 });
                 if (response.ok) {
                     input.value = '';
                     loadPlayers();
                     loadStats();
-                    showToast(`🎉 ${name} joined the game!`);
+                    showToast(`🎉 ${name} joined the game!`, 'success');
+                } else if (response.status === 403) {
+                    showToast('🔒 Admin access required', 'error');
+                    showLoginModal();
                 } else {
                     alert('Player already exists');
                 }
@@ -1456,6 +1645,12 @@
         }
 
         async function addPoints(playerId) {
+            if (!isAdmin) {
+                showToast('🔒 Admin login required to add points', 'error');
+                showLoginModal();
+                return;
+            }
+            
             const input = document.getElementById(`points-${playerId}`);
             const points = parseInt(input.value) || 0;
             if (points === 0) { alert('Enter points'); return; }
@@ -1464,6 +1659,7 @@
                 const response = await fetch(`${API_URL}/players/${playerId}/points`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ points })
                 });
                 if (response.ok) {
@@ -1472,7 +1668,10 @@
                     loadPlayers();
                     loadStats();
                     loadHistory();
-                    showToast(`${points > 0 ? '+' : ''}${points} points added!`);
+                    showToast(`${points > 0 ? '+' : ''}${points} points added!`, 'success');
+                } else if (response.status === 403) {
+                    showToast('🔒 Admin access required', 'error');
+                    showLoginModal();
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -1480,12 +1679,53 @@
         }
 
         async function deletePlayer(playerId) {
-            if (confirm('Delete this player?')) {
+            if (!isAdmin) {
+                showToast('🔒 Admin login required', 'error');
+                showLoginModal();
+                return;
+            }
+            
+            if (confirm('Delete this player and all their history?')) {
                 try {
-                    await fetch(`${API_URL}/players/${playerId}`, { method: 'DELETE' });
-                    loadPlayers();
-                    loadStats();
-                    showToast('Player removed');
+                    const response = await fetch(`${API_URL}/players/${playerId}`, { 
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        loadPlayers();
+                        loadStats();
+                        loadHistory();
+                        showToast('Player removed', 'success');
+                    } else if (response.status === 403) {
+                        showToast('🔒 Admin access required', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        async function deleteHistoryEntry(historyId) {
+            if (!isAdmin) {
+                showToast('🔒 Admin login required', 'error');
+                return;
+            }
+            
+            if (confirm('Delete this history entry? This will reverse the points.')) {
+                try {
+                    const response = await fetch(`${API_URL}/history/${historyId}`, { 
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        loadPlayers();
+                        loadStats();
+                        loadHistory();
+                        showToast('History entry deleted & points reversed', 'success');
+                        closeModal();
+                    } else if (response.status === 403) {
+                        showToast('🔒 Admin access required', 'error');
+                    }
                 } catch (error) {
                     console.error('Error:', error);
                 }
@@ -1494,7 +1734,7 @@
 
         async function openPlayerDetails(playerId) {
             try {
-                const response = await fetch(`${API_URL}/players/${playerId}/details`);
+                const response = await fetch(`${API_URL}/players/${playerId}/details`, { credentials: 'include' });
                 const player = await response.json();
                 
                 // Calculate additional insights
@@ -1613,6 +1853,7 @@
                                         <th>Change</th>
                                         <th>Running Total</th>
                                         <th>$ Value</th>
+                                        ${isAdmin ? '<th>Action</th>' : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1630,6 +1871,7 @@
                                             </td>
                                             <td class="${h.total_after > 0 ? 'positive' : h.total_after < 0 ? 'negative' : ''}">${h.total_after > 0 ? '+' : ''}${h.total_after}</td>
                                             <td>$${h.dollar_after.toFixed(2)}</td>
+                                            ${isAdmin ? `<td><button onclick="deleteHistoryEntry(${h.id})" class="btn-delete-history" title="Delete & reverse points">🗑️</button></td>` : ''}
                                         </tr>
                                     `}).join('')}
                                 </tbody>
