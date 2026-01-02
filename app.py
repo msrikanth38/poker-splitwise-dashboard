@@ -4,14 +4,21 @@ import json
 from datetime import datetime
 import os
 import hashlib
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Try to import psycopg2 for PostgreSQL, fallback to sqlite3
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
     HAS_POSTGRES = True
-except ImportError:
+    logger.info("psycopg2 loaded successfully")
+except ImportError as e:
     HAS_POSTGRES = False
+    logger.warning(f"psycopg2 not available: {e}")
 
 import sqlite3
 
@@ -26,6 +33,10 @@ ADMIN_PASSWORD_HASH = hashlib.sha256('srii'.encode()).hexdigest()
 # Database setup - Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
 DATABASE_URL = os.environ.get('DATABASE_URL')
 DB_FILE = 'poker_tracker.db'
+
+logger.info(f"DATABASE_URL set: {bool(DATABASE_URL)}")
+logger.info(f"HAS_POSTGRES: {HAS_POSTGRES}")
+logger.info(f"Using PostgreSQL: {bool(DATABASE_URL and HAS_POSTGRES)}")
 
 def get_db_connection():
     """Get database connection - PostgreSQL in production, SQLite locally"""
@@ -87,7 +98,14 @@ def execute_query(query, params=(), fetch=False, fetchone=False, commit=False):
 def init_db():
     """Initialize database with tables and sample data"""
     is_postgres = DATABASE_URL and HAS_POSTGRES
-    conn = get_db_connection()
+    logger.info(f"init_db called - using PostgreSQL: {is_postgres}")
+    
+    try:
+        conn = get_db_connection()
+        logger.info("Database connection established")
+    except Exception as e:
+        logger.error(f"Failed to connect to database: {e}")
+        raise
     
     if is_postgres:
         cur = conn.cursor()
@@ -97,6 +115,7 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
                       points_added INTEGER, total_after INTEGER, timestamp TEXT)''')
+        logger.info("PostgreSQL tables created")
     else:
         cur = conn.cursor()
         # SQLite syntax
@@ -105,11 +124,13 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id INTEGER PRIMARY KEY, player_id INTEGER, points_added INTEGER, 
                       total_after INTEGER, timestamp TEXT, FOREIGN KEY(player_id) REFERENCES players(id))''')
+        logger.info("SQLite tables created")
     
     # Add sample players if database is empty
     cur.execute('SELECT COUNT(*) as count FROM players')
     result = cur.fetchone()
     count = result[0] if isinstance(result, tuple) else result.get('count', result[0])
+    logger.info(f"Player count: {count}")
     
     if count == 0:
         sample_players = [
@@ -130,6 +151,7 @@ def init_db():
                 cur.execute('INSERT INTO players (name, base_total) VALUES (%s, %s)', (name, points))
             else:
                 cur.execute('INSERT INTO players (name, base_total) VALUES (?, ?)', (name, points))
+        logger.info("Sample players added")
     
     conn.commit()
     conn.close()
