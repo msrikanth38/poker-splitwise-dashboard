@@ -29,21 +29,20 @@ def init_db():
     c.execute('SELECT COUNT(*) FROM players')
     if c.fetchone()[0] == 0:
         sample_players = [
-            ('Srikanth', 2500),
-            ('Rahul', -1500),
-            ('Amit', 3200),
-            ('Priya', -800),
-            ('Vikram', 1200),
-            ('Neha', -2000),
-            ('Arjun', 500),
-            ('Deepak', -400)
+            ('Chaitu', 0),
+            ('Ekku', 0),
+            ('Ravi', 0),
+            ('Amani', 0),
+            ('Hindu', 0),
+            ('Shanu', 0),
+            ('Jaya', 0),
+            ('Vijji', 0),
+            ('Kanthu', 0),
+            ('Aswini', 0),
+            ('Pavani', 0)
         ]
         for name, points in sample_players:
             c.execute('INSERT INTO players (name, base_total) VALUES (?, ?)', (name, points))
-            player_id = c.lastrowid
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            c.execute('INSERT INTO history (player_id, points_added, total_after, timestamp) VALUES (?, ?, ?, ?)',
-                     (player_id, points, points, timestamp))
     
     conn.commit()
     conn.close()
