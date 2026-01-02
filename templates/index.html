@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Poker Splitwise Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e1b4b;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.95);
+            --shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 10px;
+            background-attachment: fixed;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-left h1 {
+            font-size: 1.4em;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2px;
+        }
+
+        .header-left p {
+            color: #64748b;
+            font-size: 0.75em;
+            display: none;
+        }
+
+        .conversion-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, #ec4899 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.8em;
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 10px;
+            padding: 8px 4px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card .icon {
+            font-size: 1.2em;
+            margin-bottom: 2px;
+        }
+
+        .stat-card h3 {
+            color: #64748b;
+            font-size: 0.6em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .stat-card .value {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .stat-card.winners .value { color: var(--success); }
+        .stat-card.losers .value { color: var(--danger); }
+        .stat-card.money .value { color: var(--primary); }
+
+        /* Main Section */
+        .main-section {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Search Box */
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 6px 10px 6px 28px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.8em;
+            width: 140px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+        }
+
+        /* Add Player Form */
+        .add-player-form {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .add-player-form input {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .add-player-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7em;
+            border-radius: 6px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Players Grid */
+        .players-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .player-header-row {
+            display: grid;
+            grid-template-columns: 28px 1.2fr 70px 65px 50px 45px 1fr;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .player-header-row div {
+            text-align: center;
+        }
+
+        .player-header-row .col-name {
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        .player-row {
+            display: grid;
+            grid-template-columns: 28px 1.2fr 70px 65px 50px 45px 1fr;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 8px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .player-row:hover {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        .player-row.winner {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-left: 3px solid var(--success);
+        }
+
+        .player-row.loser {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-left: 3px solid var(--danger);
+        }
+
+        .player-rank {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .player-rank.gold { color: #fbbf24; }
+        .player-rank.silver { color: #94a3b8; }
+        .player-rank.bronze { color: #d97706; }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .player-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #ec4899 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .player-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 0.85em;
+            color: var(--dark);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-name:hover {
+            color: var(--primary);
+        }
+
+        .player-points {
+            font-size: 0.85em;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .player-points.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .player-points.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .player-points.zero {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .player-dollars {
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .player-status {
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.6em;
+            text-align: center;
+        }
+
+        .player-status.won {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+
+        .player-status.lost {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .player-status.even {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+        }
+
+        .player-history {
+            text-align: center;
+        }
+
+        .btn-history {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .btn-history:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .player-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: nowrap;
+            justify-content: center;
+        }
+
+        .points-input-group {
+            display: flex;
+            gap: 3px;
+        }
+
+        .points-input-group input {
+            width: 70px;
+            padding: 5px 8px;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .points-input-group input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-add {
+            padding: 5px 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover {
+            transform: scale(1.05);
+        }
+
+        /* Settlement Section */
+        .settlement-section {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        .settlement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .settlement-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settlement-arrow {
+            font-size: 1.2em;
+        }
+
+        .settlement-details {
+            flex: 1;
+        }
+
+        .settlement-names {
+            font-weight: 600;
+            font-size: 0.8em;
+            color: var(--dark);
+            margin-bottom: 2px;
+        }
+
+        .settlement-amount {
+            font-size: 1em;
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        /* Recent Activity */
+        .activity-section {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .activity-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+
+        .activity-icon.positive {
+            background: #d1fae5;
+        }
+
+        .activity-icon.negative {
+            background: #fee2e2;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            font-size: 0.8em;
+            color: var(--dark);
+        }
+
+        .activity-time {
+            font-size: 0.65em;
+            color: #94a3b8;
+        }
+
+        .activity-points {
+            font-weight: 700;
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .activity-points.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .activity-points.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            animation: modalPop 0.3s ease;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #ec4899 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .modal-body {
+            padding: 16px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* Insight Banner */
+        .insight-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .insight-banner.positive {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+        }
+
+        .insight-banner.negative {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+        }
+
+        .insight-banner.neutral {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #475569;
+        }
+
+        .insight-icon {
+            font-size: 1.5em;
+        }
+
+        .modal-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .modal-stat {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .modal-stat.highlight {
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border: 2px solid var(--primary);
+        }
+
+        .modal-stat h4 {
+            color: #64748b;
+            font-size: 0.55em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .modal-stat .value {
+            font-size: 1em;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .modal-stat .value.positive { color: var(--success); }
+        .modal-stat .value.negative { color: var(--danger); }
+
+        /* Insights Section */
+        .insights-section {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .insights-section h3 {
+            font-size: 0.9em;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .insight-card.streak {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+
+        .insight-label {
+            font-size: 0.65em;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .insight-value {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .insight-value.positive { color: var(--success); }
+        .insight-value.negative { color: var(--danger); }
+
+        /* History Table */
+        .history-scroll {
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 8px 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.65em;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+        }
+
+        .history-table td {
+            padding: 6px;
+            font-size: 0.75em;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .history-table .row-win {
+            background: #f0fdf4;
+        }
+
+        .history-table .row-loss {
+            background: #fef2f2;
+        }
+
+        .change-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .change-badge.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .change-badge.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .history-table td.positive {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .history-table td.negative {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 0.85em;
+        }
+
+        .empty-state .icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        /* Export Button */
+        .btn-export {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .player-row {
+                grid-template-columns: 24px 1fr 60px 50px 40px 1fr;
+            }
+            
+            .player-status {
+                display: none;
+            }
+            
+            .player-header-row {
+                grid-template-columns: 24px 1fr 60px 50px 40px 1fr;
+            }
+            
+            .player-header-row .col-status {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 6px;
+                font-size: 13px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+            
+            .stat-card {
+                padding: 6px 2px;
+            }
+            
+            .stat-card .icon {
+                font-size: 1em;
+            }
+            
+            .stat-card .value {
+                font-size: 1.1em;
+            }
+
+            .header {
+                padding: 8px 12px;
+                border-radius: 12px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.1em;
+            }
+            
+            .conversion-badge {
+                padding: 6px 10px;
+                font-size: 0.7em;
+            }
+
+            .main-section, .settlement-section, .activity-section {
+                padding: 8px;
+                border-radius: 10px;
+            }
+            
+            .section-title {
+                font-size: 0.9em;
+            }
+
+            .player-header-row {
+                grid-template-columns: 22px 1fr 1fr;
+                font-size: 0.6em;
+                padding: 6px 8px;
+            }
+            
+            .player-header-row .col-points,
+            .player-header-row .col-amount,
+            .player-header-row .col-status {
+                display: none;
+            }
+
+            .player-row {
+                grid-template-columns: 22px 1fr 35px auto;
+                padding: 5px 6px;
+                gap: 4px;
+            }
+            
+            .player-points, .player-dollars, .player-status {
+                display: none;
+            }
+            
+            .player-avatar {
+                width: 22px;
+                height: 22px;
+                font-size: 0.6em;
+            }
+            
+            .player-name {
+                font-size: 0.8em;
+            }
+            
+            .btn-history {
+                padding: 3px 6px;
+                font-size: 0.75em;
+            }
+            
+            .points-input-group input {
+                width: 55px;
+                padding: 4px;
+                font-size: 0.75em;
+            }
+            
+            .btn-add {
+                padding: 4px 8px;
+                font-size: 0.7em;
+            }
+            
+            .btn-danger {
+                padding: 3px 5px;
+                font-size: 0.6em;
+            }
+
+            .add-player-form {
+                gap: 4px;
+            }
+            
+            .add-player-form input {
+                padding: 6px 8px;
+                font-size: 0.8em;
+                min-width: 100px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.75em;
+            }
+            
+            .search-box input {
+                width: 100px;
+                padding: 5px 8px 5px 24px;
+                font-size: 0.75em;
+            }
+            
+            .search-box::before {
+                font-size: 0.7em;
+                left: 6px;
+            }
+
+            .settlement-grid {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+            
+            .settlement-card {
+                padding: 6px 8px;
+            }
+            
+            .settlement-arrow {
+                font-size: 1em;
+            }
+            
+            .settlement-names {
+                font-size: 0.75em;
+            }
+            
+            .settlement-amount {
+                font-size: 0.9em;
+            }
+
+            .activity-list {
+                max-height: 120px;
+            }
+            
+            .activity-item {
+                padding: 4px;
+            }
+            
+            .activity-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 0.7em;
+            }
+            
+            .activity-name {
+                font-size: 0.75em;
+            }
+            
+            .activity-time {
+                font-size: 0.6em;
+            }
+            
+            .activity-points {
+                font-size: 0.7em;
+                padding: 2px 6px;
+            }
+
+            .modal {
+                border-radius: 12px;
+            }
+            
+            .modal-header {
+                padding: 10px;
+                border-radius: 12px 12px 0 0;
+            }
+            
+            .modal-header h2 {
+                font-size: 1em;
+            }
+            
+            .modal-body {
+                padding: 10px;
+            }
+            
+            .modal-stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+            
+            .modal-stat {
+                padding: 6px;
+            }
+            
+            .modal-stat h4 {
+                font-size: 0.5em;
+            }
+            
+            .modal-stat .value {
+                font-size: 0.9em;
+            }
+            
+            .history-table th, .history-table td {
+                padding: 4px;
+                font-size: 0.7em;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .header-left h1 {
+                font-size: 1em;
+            }
+            
+            .stat-card h3 {
+                font-size: 0.5em;
+            }
+            
+            .player-row {
+                grid-template-columns: 20px 1fr auto;
+            }
+            
+            .player-info {
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>🎰 Poker Splitwise Pro</h1>
+                <p>Smart settlement tracker for your poker nights</p>
+            </div>
+            <div class="conversion-badge">
+                💰 1000 Points = $5
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <h3>Players</h3>
+                <div class="value" id="statPlayers">0</div>
+            </div>
+            <div class="stat-card money">
+                <div class="icon">🎯</div>
+                <h3>Total Points</h3>
+                <div class="value" id="statPoints">0</div>
+            </div>
+            <div class="stat-card winners">
+                <div class="icon">🏆</div>
+                <h3>Winners</h3>
+                <div class="value" id="statWinners">0</div>
+            </div>
+            <div class="stat-card losers">
+                <div class="icon">📉</div>
+                <h3>Losers</h3>
+                <div class="value" id="statLosers">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <h3>Transactions</h3>
+                <div class="value" id="statTrans">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">⚖️</div>
+                <h3>Even</h3>
+                <div class="value" id="statEven">0</div>
+            </div>
+        </div>
+
+        <!-- Main Players Section -->
+        <div class="main-section">
+            <div class="section-header">
+                <div class="section-title">👥 Leaderboard</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search player..." oninput="filterPlayers()">
+                </div>
+            </div>
+
+            <div class="add-player-form">
+                <input type="text" id="playerInput" placeholder="Enter new player name..." onkeypress="if(event.key==='Enter') addPlayer()">
+                <button class="btn btn-primary" onclick="addPlayer()">➕ Add Player</button>
+                <button class="btn btn-export" onclick="exportData()">📥 Export CSV</button>
+            </div>
+
+            <div class="players-grid" id="playersGrid">
+                <!-- Column Headers -->
+                <div class="player-header-row">
+                    <div class="col-rank">#</div>
+                    <div class="col-name">Player Name</div>
+                    <div class="col-points">Points</div>
+                    <div class="col-amount">Amount</div>
+                    <div class="col-status">Status</div>
+                    <div class="col-new">New Points</div>
+                </div>
+                <div class="empty-state">
+                    <div class="icon">🎲</div>
+                    <p>Loading players...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settlement Section -->
+        <div class="settlement-section">
+            <div class="section-title">💸 Settlement Summary</div>
+            <p style="color: #64748b; margin-top: 10px;">Who owes whom to settle up</p>
+            <div class="settlement-grid" id="settlementGrid">
+                <!-- Dynamically generated -->
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="section-title">📊 Recent Activity</div>
+            <div class="activity-list" id="activityList">
+                <div class="empty-state">
+                    <p>No recent activity</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="playerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🃏 <span id="modalPlayerName">Player</span></h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let allPlayers = [];
+        let focusedInputId = null;
+
+        function init() {
+            loadPlayers();
+            loadStats();
+            loadHistory();
+            setInterval(() => {
+                if (!focusedInputId) {
+                    loadPlayers();
+                    loadStats();
+                    loadHistory();
+                }
+            }, 10000);
+        }
+
+        async function loadPlayers() {
+            try {
+                const response = await fetch(`${API_URL}/players`);
+                allPlayers = await response.json();
+                renderPlayers(allPlayers);
+                calculateSettlements(allPlayers);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderPlayers(players) {
+            const grid = document.getElementById('playersGrid');
+            
+            if (players.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🎲</div>
+                        <p>No players yet. Add your first player above!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = `
+                <div class="player-header-row">
+                    <div class="col-rank">#</div>
+                    <div class="col-name">Player Name</div>
+                    <div class="col-points">Points</div>
+                    <div class="col-amount">Amount</div>
+                    <div class="col-status">Status</div>
+                    <div class="col-history">History</div>
+                    <div class="col-new">New Points</div>
+                </div>
+            ` + players.map((player, index) => {
+                const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+                const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                const rowClass = player.base_total > 0 ? 'winner' : player.base_total < 0 ? 'loser' : '';
+                const initial = player.name.charAt(0).toUpperCase();
+
+                return `
+                    <div class="player-row ${rowClass}">
+                        <div class="player-rank ${rankClass}">${rankIcon}</div>
+                        <div class="player-info">
+                            <div class="player-avatar" onclick="openPlayerDetails(${player.id})" title="View details">${initial}</div>
+                            <span class="player-name" onclick="openPlayerDetails(${player.id})">${player.name}</span>
+                        </div>
+                        <div class="player-points ${player.base_total > 0 ? 'positive' : player.base_total < 0 ? 'negative' : 'zero'}">
+                            ${player.base_total > 0 ? '+' : ''}${player.base_total}
+                        </div>
+                        <div class="player-dollars">$${player.dollar_amount.toFixed(2)}</div>
+                        <div class="player-status ${player.status.toLowerCase()}">${player.status}</div>
+                        <div class="player-history">
+                            <button class="btn-history" onclick="openPlayerDetails(${player.id})" title="View History">📊</button>
+                        </div>
+                        <div class="player-actions">
+                            <div class="points-input-group">
+                                <input type="number" id="points-${player.id}" placeholder="Enter pts"
+                                    onfocus="focusedInputId='points-${player.id}'"
+                                    onblur="setTimeout(() => focusedInputId=null, 200)"
+                                    onkeypress="if(event.key==='Enter') addPoints(${player.id})">
+                                <button class="btn-add" onclick="addPoints(${player.id})">➕</button>
+                            </div>
+                            <button class="btn btn-danger" onclick="deletePlayer(${player.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterPlayers() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(search));
+            renderPlayers(filtered);
+        }
+
+        function calculateSettlements(players) {
+            const grid = document.getElementById('settlementGrid');
+            
+            const winners = players.filter(p => p.base_total > 0).sort((a, b) => b.base_total - a.base_total);
+            const losers = players.filter(p => p.base_total < 0).sort((a, b) => a.base_total - b.base_total);
+
+            if (winners.length === 0 || losers.length === 0) {
+                grid.innerHTML = '<p style="color: #64748b; padding: 20px;">No settlements needed - everyone is even! 🎉</p>';
+                return;
+            }
+
+            const settlements = [];
+            let winnersCopy = winners.map(w => ({ ...w, remaining: w.base_total }));
+            let losersCopy = losers.map(l => ({ ...l, remaining: Math.abs(l.base_total) }));
+
+            for (let loser of losersCopy) {
+                for (let winner of winnersCopy) {
+                    if (loser.remaining <= 0 || winner.remaining <= 0) continue;
+                    
+                    const amount = Math.min(loser.remaining, winner.remaining);
+                    if (amount > 0) {
+                        settlements.push({
+                            from: loser.name,
+                            to: winner.name,
+                            points: amount,
+                            dollars: (amount / 1000 * 5).toFixed(2)
+                        });
+                        loser.remaining -= amount;
+                        winner.remaining -= amount;
+                    }
+                }
+            }
+
+            grid.innerHTML = settlements.map(s => `
+                <div class="settlement-card">
+                    <div class="settlement-arrow">💸</div>
+                    <div class="settlement-details">
+                        <div class="settlement-names">${s.from} → ${s.to}</div>
+                        <div class="settlement-amount">$${s.dollars} <span style="font-size: 0.7em; color: #64748b;">(${s.points} pts)</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/history`);
+                const history = await response.json();
+                
+                const list = document.getElementById('activityList');
+                if (history.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>No recent activity</p></div>';
+                    return;
+                }
+
+                list.innerHTML = history.slice(0, 10).map(h => `
+                    <div class="activity-item">
+                        <div class="activity-icon ${h.points_added > 0 ? 'positive' : 'negative'}">
+                            ${h.points_added > 0 ? '📈' : '📉'}
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-name">${h.player_name}</div>
+                            <div class="activity-time">${new Date(h.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div class="activity-points ${h.points_added > 0 ? 'positive' : 'negative'}">
+                            ${h.points_added > 0 ? '+' : ''}${h.points_added}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const stats = await response.json();
+                document.getElementById('statPlayers').textContent = stats.total_players;
+                document.getElementById('statPoints').textContent = stats.total_points;
+                document.getElementById('statWinners').textContent = stats.winners;
+                document.getElementById('statLosers').textContent = stats.losers;
+                document.getElementById('statTrans').textContent = stats.total_transactions;
+                document.getElementById('statEven').textContent = stats.even;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function addPlayer() {
+            const input = document.getElementById('playerInput');
+            const name = input.value.trim();
+            if (!name) { alert('Enter player name'); return; }
+
+            try {
+                const response = await fetch(`${API_URL}/players`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (response.ok) {
+                    input.value = '';
+                    loadPlayers();
+                    loadStats();
+                    showToast(`🎉 ${name} joined the game!`);
+                } else {
+                    alert('Player already exists');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function addPoints(playerId) {
+            const input = document.getElementById(`points-${playerId}`);
+            const points = parseInt(input.value) || 0;
+            if (points === 0) { alert('Enter points'); return; }
+
+            try {
+                const response = await fetch(`${API_URL}/players/${playerId}/points`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ points })
+                });
+                if (response.ok) {
+                    input.value = '';
+                    focusedInputId = null;
+                    loadPlayers();
+                    loadStats();
+                    loadHistory();
+                    showToast(`${points > 0 ? '+' : ''}${points} points added!`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deletePlayer(playerId) {
+            if (confirm('Delete this player?')) {
+                try {
+                    await fetch(`${API_URL}/players/${playerId}`, { method: 'DELETE' });
+                    loadPlayers();
+                    loadStats();
+                    showToast('Player removed');
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        async function openPlayerDetails(playerId) {
+            try {
+                const response = await fetch(`${API_URL}/players/${playerId}/details`);
+                const player = await response.json();
+                
+                // Calculate additional insights
+                const avgPointsPerGame = player.stats.total_games > 0 ? 
+                    Math.round(player.base_total / player.stats.total_games) : 0;
+                const totalWinnings = player.history.filter(h => h.points_added > 0)
+                    .reduce((sum, h) => sum + h.points_added, 0);
+                const totalLosses = player.history.filter(h => h.points_added < 0)
+                    .reduce((sum, h) => sum + Math.abs(h.points_added), 0);
+                
+                // Get streak info
+                let currentStreak = 0;
+                let streakType = '';
+                if (player.history.length > 0) {
+                    const lastResult = player.history[0].points_added;
+                    streakType = lastResult > 0 ? 'win' : 'loss';
+                    for (let h of player.history) {
+                        if ((streakType === 'win' && h.points_added > 0) || 
+                            (streakType === 'loss' && h.points_added < 0)) {
+                            currentStreak++;
+                        } else break;
+                    }
+                }
+                
+                // Find last played date
+                const lastPlayed = player.history.length > 0 ? 
+                    new Date(player.history[0].timestamp).toLocaleDateString() : 'Never';
+                
+                document.getElementById('modalPlayerName').textContent = player.name;
+                document.getElementById('modalBody').innerHTML = `
+                    <!-- Performance Summary -->
+                    <div class="insight-banner ${player.base_total > 0 ? 'positive' : player.base_total < 0 ? 'negative' : 'neutral'}">
+                        <span class="insight-icon">${player.base_total > 0 ? '🏆' : player.base_total < 0 ? '📉' : '⚖️'}</span>
+                        <span class="insight-text">
+                            ${player.base_total > 0 ? `Up $${player.dollar_amount.toFixed(2)} overall!` : 
+                              player.base_total < 0 ? `Down $${Math.abs(player.dollar_amount).toFixed(2)} overall` : 
+                              'Breaking even!'}
+                        </span>
+                    </div>
+
+                    <!-- Key Stats Grid -->
+                    <div class="modal-stats-grid">
+                        <div class="modal-stat highlight">
+                            <h4>💰 Net Points</h4>
+                            <div class="value ${player.base_total > 0 ? 'positive' : player.base_total < 0 ? 'negative' : ''}">${player.base_total > 0 ? '+' : ''}${player.base_total}</div>
+                        </div>
+                        <div class="modal-stat highlight">
+                            <h4>💵 Net Amount</h4>
+                            <div class="value ${player.dollar_amount > 0 ? 'positive' : player.dollar_amount < 0 ? 'negative' : ''}">$${player.dollar_amount.toFixed(2)}</div>
+                        </div>
+                        <div class="modal-stat">
+                            <h4>🎮 Games</h4>
+                            <div class="value">${player.stats.total_games}</div>
+                        </div>
+                        <div class="modal-stat">
+                            <h4>✅ Wins</h4>
+                            <div class="value positive">${player.stats.total_wins}</div>
+                        </div>
+                        <div class="modal-stat">
+                            <h4>❌ Losses</h4>
+                            <div class="value negative">${player.stats.total_losses}</div>
+                        </div>
+                        <div class="modal-stat">
+                            <h4>📊 Win Rate</h4>
+                            <div class="value">${player.stats.win_rate}%</div>
+                        </div>
+                    </div>
+
+                    <!-- Insights Section -->
+                    <div class="insights-section">
+                        <h3>🔍 Key Insights</h3>
+                        <div class="insights-grid">
+                            <div class="insight-card">
+                                <div class="insight-label">🔥 Best Win</div>
+                                <div class="insight-value positive">+${player.stats.biggest_win} pts</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-label">💔 Worst Loss</div>
+                                <div class="insight-value negative">${player.stats.biggest_loss} pts</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-label">📈 Avg/Game</div>
+                                <div class="insight-value ${avgPointsPerGame >= 0 ? 'positive' : 'negative'}">${avgPointsPerGame > 0 ? '+' : ''}${avgPointsPerGame} pts</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-label">📅 Last Played</div>
+                                <div class="insight-value">${lastPlayed}</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-label">⬆️ Total Won</div>
+                                <div class="insight-value positive">+${totalWinnings} pts</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-label">⬇️ Total Lost</div>
+                                <div class="insight-value negative">-${totalLosses} pts</div>
+                            </div>
+                            ${currentStreak > 1 ? `
+                            <div class="insight-card streak">
+                                <div class="insight-label">${streakType === 'win' ? '🔥' : '❄️'} Current Streak</div>
+                                <div class="insight-value ${streakType === 'win' ? 'positive' : 'negative'}">${currentStreak} ${streakType}s</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Transaction History -->
+                    <h3 style="margin: 20px 0 10px;">📜 Complete Transaction History</h3>
+                    ${player.history.length > 0 ? `
+                        <div class="history-scroll">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Change</th>
+                                        <th>Running Total</th>
+                                        <th>$ Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${player.history.map((h, i) => {
+                                        const date = new Date(h.timestamp);
+                                        return `
+                                        <tr class="${h.points_added > 0 ? 'row-win' : 'row-loss'}">
+                                            <td>${player.history.length - i}</td>
+                                            <td>${date.toLocaleDateString()}</td>
+                                            <td>${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                                            <td>
+                                                <span class="change-badge ${h.points_added > 0 ? 'positive' : 'negative'}">
+                                                    ${h.points_added > 0 ? '+' : ''}${h.points_added}
+                                                </span>
+                                            </td>
+                                            <td class="${h.total_after > 0 ? 'positive' : h.total_after < 0 ? 'negative' : ''}">${h.total_after > 0 ? '+' : ''}${h.total_after}</td>
+                                            <td>$${h.dollar_after.toFixed(2)}</td>
+                                        </tr>
+                                    `}).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : '<p style="color: #64748b; text-align: center; padding: 20px;">No transactions yet - start playing!</p>'}
+                `;
+                
+                document.getElementById('playerModal').classList.add('active');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('playerModal').classList.remove('active');
+        }
+
+        document.getElementById('playerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function exportData() {
+            let csv = 'Rank,Name,Points,Dollar Amount,Status\n';
+            allPlayers.forEach((p, i) => {
+                csv += `${i+1},${p.name},${p.base_total},$${p.dollar_amount.toFixed(2)},${p.status}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `poker_standings_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            showToast('📥 CSV exported!');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
