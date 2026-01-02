@@ -12,7 +12,7 @@ CORS(app)
 DB_FILE = 'poker_tracker.db'
 
 def init_db():
-    """Initialize database with tables"""
+    """Initialize database with tables and sample data"""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
@@ -24,6 +24,26 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS history
                  (id INTEGER PRIMARY KEY, player_id INTEGER, points_added INTEGER, 
                   total_after INTEGER, timestamp TEXT, FOREIGN KEY(player_id) REFERENCES players(id))''')
+    
+    # Add sample players if database is empty
+    c.execute('SELECT COUNT(*) FROM players')
+    if c.fetchone()[0] == 0:
+        sample_players = [
+            ('Srikanth', 2500),
+            ('Rahul', -1500),
+            ('Amit', 3200),
+            ('Priya', -800),
+            ('Vikram', 1200),
+            ('Neha', -2000),
+            ('Arjun', 500),
+            ('Deepak', -400)
+        ]
+        for name, points in sample_players:
+            c.execute('INSERT INTO players (name, base_total) VALUES (?, ?)', (name, points))
+            player_id = c.lastrowid
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            c.execute('INSERT INTO history (player_id, points_added, total_after, timestamp) VALUES (?, ?, ?, ?)',
+                     (player_id, points, points, timestamp))
     
     conn.commit()
     conn.close()
