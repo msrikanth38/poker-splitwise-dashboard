@@ -953,10 +953,17 @@
             .header {
                 padding: 8px 12px;
                 border-radius: 12px;
+                flex-direction: column;
+                gap: 8px;
             }
             
             .header-left h1 {
                 font-size: 1.1em;
+            }
+            
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
             }
             
             .conversion-badge {
@@ -973,51 +980,92 @@
                 font-size: 0.9em;
             }
 
+            /* Mobile: Show all important columns in card-like rows */
             .player-header-row {
-                grid-template-columns: 22px 1fr 1fr;
-                font-size: 0.6em;
-                padding: 6px 8px;
-            }
-            
-            .player-header-row .col-points,
-            .player-header-row .col-amount,
-            .player-header-row .col-status {
-                display: none;
+                display: none !important;
             }
 
             .player-row {
-                grid-template-columns: 22px 1fr 35px auto;
-                padding: 5px 6px;
-                gap: 4px;
+                display: flex;
+                flex-wrap: wrap;
+                padding: 10px 8px;
+                gap: 6px;
+                align-items: center;
+                border-left: 4px solid var(--primary);
+                margin-bottom: 6px;
             }
             
-            .player-points, .player-dollars, .player-status {
+            .player-row.winner {
+                border-left-color: var(--success);
+            }
+            
+            .player-row.loser {
+                border-left-color: var(--danger);
+            }
+            
+            .player-rank {
                 display: none;
             }
             
             .player-avatar {
-                width: 22px;
-                height: 22px;
-                font-size: 0.6em;
+                width: 28px;
+                height: 28px;
+                font-size: 0.7em;
             }
             
             .player-name {
+                font-size: 0.9em;
+                font-weight: 600;
+                flex: 1;
+                min-width: 70px;
+            }
+            
+            /* Show points and amount on mobile */
+            .player-points, .player-dollars {
+                display: flex !important;
                 font-size: 0.8em;
+                font-weight: 600;
+            }
+            
+            .player-points {
+                min-width: 55px;
+            }
+            
+            .player-dollars {
+                min-width: 50px;
+                color: var(--primary);
+            }
+            
+            .player-status {
+                display: flex !important;
+                font-size: 0.65em;
+                padding: 2px 6px;
             }
             
             .btn-history {
-                padding: 3px 6px;
+                padding: 4px 8px;
                 font-size: 0.75em;
+            }
+            
+            /* New points input on new line for mobile */
+            .points-input-group {
+                width: 100%;
+                display: flex;
+                gap: 4px;
+                margin-top: 4px;
+                padding-top: 6px;
+                border-top: 1px dashed #e2e8f0;
             }
             
             .points-input-group input {
-                width: 55px;
-                padding: 4px;
-                font-size: 0.75em;
+                flex: 1;
+                min-width: 60px;
+                padding: 6px 8px;
+                font-size: 0.85em;
             }
             
             .btn-add {
-                padding: 4px 8px;
+                padding: 6px 12px;
                 font-size: 0.7em;
             }
             
