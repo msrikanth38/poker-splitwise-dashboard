@@ -980,98 +980,143 @@
                 font-size: 0.9em;
             }
 
-            /* Mobile: Show all important columns in card-like rows */
+            /* Mobile: Hide the grid header, show card-style rows */
             .player-header-row {
                 display: none !important;
             }
 
-            .player-row {
+            .players-grid {
                 display: flex;
-                flex-wrap: wrap;
-                padding: 10px 8px;
-                gap: 6px;
-                align-items: center;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .player-row {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+                grid-template-areas: 
+                    "name name"
+                    "points amount"
+                    "history actions";
+                padding: 10px;
+                gap: 8px;
                 border-left: 4px solid var(--primary);
-                margin-bottom: 6px;
+                border-radius: 8px;
+                background: white;
             }
             
             .player-row.winner {
                 border-left-color: var(--success);
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255,255,255,1) 100%);
             }
             
             .player-row.loser {
                 border-left-color: var(--danger);
+                background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(255,255,255,1) 100%);
             }
             
             .player-rank {
-                display: none;
+                display: none !important;
+            }
+            
+            .player-info {
+                grid-area: name;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
             
             .player-avatar {
-                width: 28px;
-                height: 28px;
-                font-size: 0.7em;
+                width: 32px;
+                height: 32px;
+                font-size: 0.8em;
             }
             
             .player-name {
-                font-size: 0.9em;
-                font-weight: 600;
-                flex: 1;
-                min-width: 70px;
+                font-size: 1em;
+                font-weight: 700;
             }
             
-            /* Show points and amount on mobile */
-            .player-points, .player-dollars {
-                display: flex !important;
-                font-size: 0.8em;
-                font-weight: 600;
-            }
-            
+            /* Show points prominently on mobile */
             .player-points {
-                min-width: 55px;
+                grid-area: points;
+                display: flex !important;
+                flex-direction: column;
+                align-items: flex-start;
+                font-size: 1.1em;
+                font-weight: 700;
             }
             
+            .player-points::before {
+                content: "Points";
+                font-size: 0.6em;
+                font-weight: 500;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+            
+            /* Show amount prominently on mobile */
             .player-dollars {
-                min-width: 50px;
+                grid-area: amount;
+                display: flex !important;
+                flex-direction: column;
+                align-items: flex-end;
+                font-size: 1.1em;
+                font-weight: 700;
                 color: var(--primary);
             }
             
+            .player-dollars::before {
+                content: "Amount";
+                font-size: 0.6em;
+                font-weight: 500;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+            
             .player-status {
-                display: flex !important;
-                font-size: 0.65em;
-                padding: 2px 6px;
+                display: none !important;
+            }
+            
+            .player-history {
+                grid-area: history;
+                display: flex;
+                align-items: center;
             }
             
             .btn-history {
-                padding: 4px 8px;
-                font-size: 0.75em;
+                padding: 6px 12px;
+                font-size: 0.8em;
             }
             
-            /* New points input on new line for mobile */
+            /* Actions area on mobile */
+            .player-actions {
+                grid-area: actions;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+            }
+            
             .points-input-group {
-                width: 100%;
                 display: flex;
                 gap: 4px;
-                margin-top: 4px;
-                padding-top: 6px;
-                border-top: 1px dashed #e2e8f0;
             }
             
             .points-input-group input {
-                flex: 1;
-                min-width: 60px;
+                width: 70px;
                 padding: 6px 8px;
                 font-size: 0.85em;
             }
             
             .btn-add {
-                padding: 6px 12px;
-                font-size: 0.7em;
+                padding: 6px 10px;
+                font-size: 0.75em;
             }
             
-            .btn-danger {
-                padding: 3px 5px;
-                font-size: 0.6em;
+            .btn-danger.btn-small {
+                padding: 4px 6px;
+                font-size: 0.65em;
             }
 
             .add-player-form {
