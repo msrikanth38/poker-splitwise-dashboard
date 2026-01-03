@@ -53,6 +53,8 @@ def execute_query(query, params=(), fetch=False, fetchone=False, commit=False):
     conn = get_db_connection()
     is_postgres = DATABASE_URL and HAS_POSTGRES
     
+    logger.info(f"execute_query - is_postgres: {is_postgres}, query: {query[:50]}...")
+    
     if is_postgres:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         # Convert ? placeholders to %s for PostgreSQL
@@ -65,15 +67,22 @@ def execute_query(query, params=(), fetch=False, fetchone=False, commit=False):
         
         if fetch:
             result = cur.fetchall()
-            if not is_postgres:
+            logger.info(f"Fetch result count: {len(result)}")
+            if is_postgres:
+                # Convert RealDictRow to regular dict
+                result = [dict(row) for row in result]
+            else:
                 # Convert sqlite3.Row to dict
                 result = [dict(row) for row in result]
             conn.close()
             return result
         elif fetchone:
             result = cur.fetchone()
-            if result and not is_postgres:
-                result = dict(result)
+            if result:
+                if is_postgres:
+                    result = dict(result)
+                else:
+                    result = dict(result)
             conn.close()
             return result
         elif commit:
@@ -202,7 +211,14 @@ def auth_status():
 @app.route('/api/players', methods=['GET'])
 def get_players():
     """Get all players with current totals"""
-    players = execute_query('SELECT id, name, base_total FROM players ORDER BY base_total DESC', fetch=True)
+    logger.info(f"get_players called - DATABASE_URL: {bool(DATABASE_URL)}, HAS_POSTGRES: {HAS_POSTGRES}")
+    
+    try:
+        players = execute_query('SELECT id, name, base_total FROM players ORDER BY base_total DESC', fetch=True)
+        logger.info(f"Found {len(players)} players")
+    except Exception as e:
+        logger.error(f"Error fetching players: {e}")
+        players = []
     
     players_list = []
     for player in players:
