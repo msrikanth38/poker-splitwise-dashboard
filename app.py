@@ -178,6 +178,31 @@ def index():
     """Render main dashboard"""
     return render_template('index.html')
 
+@app.route('/api/debug', methods=['GET'])
+def debug():
+    """Debug endpoint to check database connection"""
+    info = {
+        'DATABASE_URL_SET': bool(DATABASE_URL),
+        'HAS_POSTGRES': HAS_POSTGRES,
+        'USING_POSTGRES': bool(DATABASE_URL and HAS_POSTGRES)
+    }
+    
+    try:
+        if DATABASE_URL and HAS_POSTGRES:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute('SELECT COUNT(*) FROM players')
+            count = cur.fetchone()[0]
+            info['POSTGRES_CONNECTION'] = 'SUCCESS'
+            info['PLAYER_COUNT'] = count
+            conn.close()
+        else:
+            info['POSTGRES_CONNECTION'] = 'NOT_USING_POSTGRES'
+    except Exception as e:
+        info['POSTGRES_CONNECTION'] = f'FAILED: {str(e)}'
+    
+    return jsonify(info)
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """Admin login"""
