@@ -10,17 +10,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Try to import psycopg2 for PostgreSQL, fallback to sqlite3
+# Try to import psycopg (v3) for PostgreSQL, fallback to sqlite3
 POSTGRES_IMPORT_ERROR = None
 try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
+    import psycopg
+    from psycopg.rows import dict_row
     HAS_POSTGRES = True
-    logger.info("psycopg2 loaded successfully")
+    logger.info("psycopg loaded successfully")
 except Exception as e:
     HAS_POSTGRES = False
     POSTGRES_IMPORT_ERROR = str(e)
-    logger.warning(f"psycopg2 not available: {e}")
+    logger.warning(f"psycopg not available: {e}")
 
 import sqlite3
 
@@ -43,7 +43,7 @@ logger.info(f"Using PostgreSQL: {bool(DATABASE_URL and HAS_POSTGRES)}")
 def get_db_connection():
     """Get database connection - PostgreSQL in production, SQLite locally"""
     if DATABASE_URL and HAS_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
         return conn
     else:
         conn = sqlite3.connect(DB_FILE)
@@ -58,7 +58,7 @@ def execute_query(query, params=(), fetch=False, fetchone=False, commit=False):
     logger.info(f"execute_query - is_postgres: {is_postgres}, query: {query[:50]}...")
     
     if is_postgres:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur = conn.cursor()
         # Convert ? placeholders to %s for PostgreSQL
         query = query.replace('?', '%s')
     else:
@@ -71,8 +71,8 @@ def execute_query(query, params=(), fetch=False, fetchone=False, commit=False):
             result = cur.fetchall()
             logger.info(f"Fetch result count: {len(result)}")
             if is_postgres:
-                # Convert RealDictRow to regular dict
-                result = [dict(row) for row in result]
+                # Already dict from dict_row factory
+                result = [dict(row) if hasattr(row, 'keys') else row for row in result]
             else:
                 # Convert sqlite3.Row to dict
                 result = [dict(row) for row in result]
@@ -193,7 +193,7 @@ def debug():
     
     try:
         if DATABASE_URL and HAS_POSTGRES:
-            conn = psycopg2.connect(DATABASE_URL)
+            conn = psycopg.connect(DATABASE_URL)
             cur = conn.cursor()
             cur.execute('SELECT COUNT(*) FROM players')
             count = cur.fetchone()[0]
