@@ -11,13 +11,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Try to import psycopg2 for PostgreSQL, fallback to sqlite3
+POSTGRES_IMPORT_ERROR = None
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
     HAS_POSTGRES = True
     logger.info("psycopg2 loaded successfully")
-except ImportError as e:
+except Exception as e:
     HAS_POSTGRES = False
+    POSTGRES_IMPORT_ERROR = str(e)
     logger.warning(f"psycopg2 not available: {e}")
 
 import sqlite3
@@ -183,7 +185,9 @@ def debug():
     """Debug endpoint to check database connection"""
     info = {
         'DATABASE_URL_SET': bool(DATABASE_URL),
+        'DATABASE_URL_FIRST_20': DATABASE_URL[:20] if DATABASE_URL else None,
         'HAS_POSTGRES': HAS_POSTGRES,
+        'POSTGRES_IMPORT_ERROR': POSTGRES_IMPORT_ERROR,
         'USING_POSTGRES': bool(DATABASE_URL and HAS_POSTGRES)
     }
     
