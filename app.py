@@ -126,11 +126,16 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
                       points_added INTEGER, total_after INTEGER, timestamp TEXT)''')
-        # Pot tracker table
+        # Pot tracker table (daily counter - can be reset)
         cur.execute('''CREATE TABLE IF NOT EXISTS pots
                      (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
                       pot_count INTEGER DEFAULT 0, session_date DATE DEFAULT CURRENT_DATE,
                       UNIQUE(player_id, session_date))''')
+        # Pot history table (permanent history - never auto-deleted)
+        cur.execute('''CREATE TABLE IF NOT EXISTS pot_history
+                     (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
+                      pot_count INTEGER DEFAULT 1, session_date DATE DEFAULT CURRENT_DATE,
+                      timestamp TEXT, session_name TEXT DEFAULT 'Session')''')
         logger.info("PostgreSQL tables created")
     else:
         cur = conn.cursor()
@@ -140,11 +145,16 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id INTEGER PRIMARY KEY, player_id INTEGER, points_added INTEGER, 
                       total_after INTEGER, timestamp TEXT, FOREIGN KEY(player_id) REFERENCES players(id))''')
-        # Pot tracker table
+        # Pot tracker table (daily counter - can be reset)
         cur.execute('''CREATE TABLE IF NOT EXISTS pots
                      (id INTEGER PRIMARY KEY, player_id INTEGER, pot_count INTEGER DEFAULT 0,
                       session_date DATE DEFAULT CURRENT_DATE, 
                       UNIQUE(player_id, session_date), FOREIGN KEY(player_id) REFERENCES players(id))''')
+        # Pot history table (permanent history)
+        cur.execute('''CREATE TABLE IF NOT EXISTS pot_history
+                     (id INTEGER PRIMARY KEY, player_id INTEGER, pot_count INTEGER DEFAULT 1,
+                      session_date DATE DEFAULT CURRENT_DATE, timestamp TEXT, session_name TEXT DEFAULT 'Session',
+                      FOREIGN KEY(player_id) REFERENCES players(id))''')
         logger.info("SQLite tables created")
     
     # Add sample players if database is empty
@@ -527,14 +537,19 @@ def add_pot(player_id):
         return jsonify({'error': 'Admin access required'}), 403
     
     is_postgres = DATABASE_URL and HAS_POSTGRES
+    timestamp = datetime.now().isoformat()
     
     if is_postgres:
-        # Try to insert or update using ON CONFLICT
+        # Update today's counter
         execute_query('''INSERT INTO pots (player_id, pot_count, session_date)
                         VALUES (%s, 1, CURRENT_DATE)
                         ON CONFLICT (player_id, session_date)
                         DO UPDATE SET pot_count = pots.pot_count + 1''',
                      (player_id,), commit=True)
+        # Add to permanent history
+        execute_query('''INSERT INTO pot_history (player_id, pot_count, session_date, timestamp)
+                        VALUES (%s, 1, CURRENT_DATE, %s)''',
+                     (player_id, timestamp), commit=True)
     else:
         # SQLite version
         execute_query('''INSERT INTO pots (player_id, pot_count, session_date)
@@ -542,12 +557,16 @@ def add_pot(player_id):
                         ON CONFLICT(player_id, session_date)
                         DO UPDATE SET pot_count = pot_count + 1''',
                      (player_id,), commit=True)
+        # Add to permanent history
+        execute_query('''INSERT INTO pot_history (player_id, pot_count, session_date, timestamp)
+                        VALUES (?, 1, DATE('now'), ?)''',
+                     (player_id, timestamp), commit=True)
     
     return jsonify({'success': True}), 200
 
 @app.route('/api/pots/<int:player_id>/remove', methods=['POST'])
 def remove_pot(player_id):
-    """Remove a pot from a player (Admin only)"""
+    """Remove a pot from a player's today counter only (Admin only)"""
     if not is_admin():
         return jsonify({'error': 'Admin access required'}), 403
     
@@ -566,38 +585,37 @@ def remove_pot(player_id):
 
 @app.route('/api/pots/reset', methods=['POST'])
 def reset_pots():
-    """Reset all pots for today (Admin only)"""
+    """Reset today's pot counter only - history is preserved (Admin only)"""
     if not is_admin():
         return jsonify({'error': 'Admin access required'}), 403
     
     is_postgres = DATABASE_URL and HAS_POSTGRES
     
+    # Only reset today's counter, NOT the history
     if is_postgres:
         execute_query('DELETE FROM pots WHERE session_date = CURRENT_DATE', commit=True)
     else:
         execute_query("DELETE FROM pots WHERE session_date = DATE('now')", commit=True)
     
-    return jsonify({'success': True}), 200
+    return jsonify({'success': True, 'message': 'Counter reset. History preserved.'}), 200
 
 @app.route('/api/pots/history', methods=['GET'])
 def get_pot_history():
-    """Get pot history by date"""
+    """Get pot history from permanent pot_history table"""
     is_postgres = DATABASE_URL and HAS_POSTGRES
     
     if is_postgres:
-        query = '''SELECT pt.session_date, p.name, pt.pot_count
-                   FROM pots pt
-                   JOIN players p ON pt.player_id = p.id
-                   WHERE pt.pot_count > 0
-                   ORDER BY pt.session_date DESC, pt.pot_count DESC
-                   LIMIT 100'''
+        query = '''SELECT ph.id, ph.session_date, p.name, ph.pot_count, ph.timestamp
+                   FROM pot_history ph
+                   JOIN players p ON ph.player_id = p.id
+                   ORDER BY ph.timestamp DESC
+                   LIMIT 200'''
     else:
-        query = '''SELECT pt.session_date, p.name, pt.pot_count
-                   FROM pots pt
-                   JOIN players p ON pt.player_id = p.id
-                   WHERE pt.pot_count > 0
-                   ORDER BY pt.session_date DESC, pt.pot_count DESC
-                   LIMIT 100'''
+        query = '''SELECT ph.id, ph.session_date, p.name, ph.pot_count, ph.timestamp
+                   FROM pot_history ph
+                   JOIN players p ON ph.player_id = p.id
+                   ORDER BY ph.timestamp DESC
+                   LIMIT 200'''
     
     history = execute_query(query, fetch=True)
     
@@ -607,7 +625,23 @@ def get_pot_history():
         date = str(h['session_date'])
         if date not in grouped:
             grouped[date] = []
-        grouped[date].append({'name': h['name'], 'pot_count': h['pot_count']})
+        grouped[date].append({
+            'id': h['id'],
+            'name': h['name'], 
+            'pot_count': h['pot_count'],
+            'timestamp': h['timestamp']
+        })
+    
+    return jsonify(grouped)
+
+@app.route('/api/pots/history/<int:history_id>', methods=['DELETE'])
+def delete_pot_history(history_id):
+    """Delete a pot history entry (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    execute_query('DELETE FROM pot_history WHERE id = ?', (history_id,), commit=True)
+    return jsonify({'success': True}), 200
     
     return jsonify(grouped)
 
