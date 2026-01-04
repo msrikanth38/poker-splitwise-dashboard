@@ -460,6 +460,8 @@ def clear_all_history():
 @app.route('/api/players/<int:player_id>/details', methods=['GET'])
 def get_player_details(player_id):
     """Get complete player details with all history"""
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
     # Get player info
     player = execute_query('SELECT id, name, base_total FROM players WHERE id = ?', (player_id,), fetchone=True)
     
@@ -471,6 +473,11 @@ def get_player_details(player_id):
                  FROM history WHERE player_id = ? 
                  ORDER BY timestamp DESC''', (player_id,), fetch=True)
     
+    # Get pot history for this player (pots bought)
+    pot_history = execute_query('''SELECT id, pot_count, session_date, timestamp 
+                 FROM pot_history WHERE player_id = ? 
+                 ORDER BY timestamp DESC''', (player_id,), fetch=True)
+    
     # Calculate stats
     total_wins = sum(1 for h in history if h['points_added'] > 0)
     total_losses = sum(1 for h in history if h['points_added'] < 0)
@@ -479,6 +486,12 @@ def get_player_details(player_id):
     total_games = len(history)
     
     base_total = player['base_total'] or 0
+    
+    # Calculate pots bought (from pot_history)
+    total_pots_bought = sum(p['pot_count'] for p in pot_history)
+    
+    # Calculate pots earned/lost from points (1000 points = 1 pot)
+    pots_earned = base_total // 1000  # Can be negative if lost
     
     return jsonify({
         'id': player['id'],
@@ -493,6 +506,16 @@ def get_player_details(player_id):
             'biggest_win': biggest_win,
             'biggest_loss': biggest_loss,
             'win_rate': round((total_wins / total_games * 100), 1) if total_games > 0 else 0
+        },
+        'pot_stats': {
+            'total_pots_bought': total_pots_bought,
+            'pots_earned': pots_earned,
+            'pot_history': [{
+                'id': p['id'],
+                'pot_count': p['pot_count'],
+                'session_date': str(p['session_date']),
+                'timestamp': p['timestamp']
+            } for p in pot_history]
         },
         'history': [{
             'id': h['id'],

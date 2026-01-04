@@ -793,7 +793,7 @@
             color: #991b1b;
         }
 
-        /* Modal */
+        /* Modal - Full Screen */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -806,7 +806,7 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 10px;
         }
 
         .modal-overlay.active {
@@ -815,13 +815,16 @@
 
         .modal {
             background: white;
-            border-radius: 24px;
-            max-width: 800px;
+            border-radius: 16px;
             width: 100%;
-            max-height: 90vh;
+            max-width: 95vw;
+            height: 95vh;
+            max-height: 95vh;
             overflow-y: auto;
             box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
             animation: modalPop 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes modalPop {
@@ -837,6 +840,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .modal-header h2 {
@@ -861,8 +865,89 @@
 
         .modal-body {
             padding: 16px;
-            max-height: 70vh;
+            flex: 1;
             overflow-y: auto;
+        }
+
+        /* Pot Stats Cards */
+        .pot-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pot-stat-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .pot-stat-card:hover {
+            transform: translateY(-2px);
+            border-color: #f59e0b;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .pot-stat-card.earned {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .pot-stat-card.earned:hover {
+            border-color: #10b981;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .pot-stat-card h4 {
+            font-size: 0.75em;
+            color: #78716c;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .pot-stat-card .pot-value {
+            font-size: 2em;
+            font-weight: 800;
+            color: #d97706;
+        }
+
+        .pot-stat-card.earned .pot-value {
+            color: #059669;
+        }
+
+        .pot-stat-card .pot-label {
+            font-size: 0.8em;
+            color: #92400e;
+            margin-top: 4px;
+        }
+
+        .pot-stat-card.earned .pot-label {
+            color: #065f46;
+        }
+
+        .pot-details-section {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .pot-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.85em;
+        }
+
+        .pot-detail-row:last-child {
+            border-bottom: none;
         }
 
         /* Insight Banner */
@@ -2086,6 +2171,12 @@
                     new Date(player.history[0].timestamp).toLocaleDateString() : 'Never';
                 
                 document.getElementById('modalPlayerName').textContent = player.name;
+                
+                // Pot stats
+                const potsBought = player.pot_stats ? player.pot_stats.total_pots_bought : 0;
+                const potsEarned = player.pot_stats ? player.pot_stats.pots_earned : 0;
+                const potHistory = player.pot_stats ? player.pot_stats.pot_history : [];
+                
                 document.getElementById('modalBody').innerHTML = `
                     <!-- Performance Summary -->
                     <div class="insight-banner ${player.base_total > 0 ? 'positive' : player.base_total < 0 ? 'negative' : 'neutral'}">
@@ -2095,6 +2186,31 @@
                               player.base_total < 0 ? `Down $${Math.abs(player.dollar_amount).toFixed(2)} overall` : 
                               'Breaking even!'}
                         </span>
+                    </div>
+
+                    <!-- Pot Stats Cards -->
+                    <div class="pot-stats-grid">
+                        <div class="pot-stat-card" onclick="togglePotDetails('bought')">
+                            <h4>🎰 Pots Bought</h4>
+                            <div class="pot-value">${potsBought}</div>
+                            <div class="pot-label">Click to see details</div>
+                        </div>
+                        <div class="pot-stat-card earned">
+                            <h4>💰 Pots ${potsEarned >= 0 ? 'Earned' : 'Lost'}</h4>
+                            <div class="pot-value">${Math.abs(potsEarned)}</div>
+                            <div class="pot-label">${potsEarned >= 0 ? 'From winnings' : 'From losses'} (${player.base_total} pts)</div>
+                        </div>
+                    </div>
+
+                    <!-- Pot Purchase History (hidden by default) -->
+                    <div id="potBoughtDetails" class="pot-details-section" style="display:none;">
+                        <h4 style="margin-bottom:10px;">📅 Pot Purchase History</h4>
+                        ${potHistory.length > 0 ? potHistory.map(p => `
+                            <div class="pot-detail-row">
+                                <span>${new Date(p.session_date).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'})}</span>
+                                <span style="font-weight:700;color:#d97706;">${p.pot_count} pot${p.pot_count > 1 ? 's' : ''}</span>
+                            </div>
+                        `).join('') : '<p style="color:#94a3b8;text-align:center;">No pots purchased yet</p>'}
                     </div>
 
                     <!-- Key Stats Grid -->
@@ -2241,6 +2357,13 @@
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
+        }
+
+        function togglePotDetails(type) {
+            const el = document.getElementById('potBoughtDetails');
+            if (el) {
+                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            }
         }
 
         // Pot Tracker Functions
