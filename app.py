@@ -126,6 +126,11 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
                       points_added INTEGER, total_after INTEGER, timestamp TEXT)''')
+        # Pot tracker table
+        cur.execute('''CREATE TABLE IF NOT EXISTS pots
+                     (id SERIAL PRIMARY KEY, player_id INTEGER REFERENCES players(id), 
+                      pot_count INTEGER DEFAULT 0, session_date DATE DEFAULT CURRENT_DATE,
+                      UNIQUE(player_id, session_date))''')
         logger.info("PostgreSQL tables created")
     else:
         cur = conn.cursor()
@@ -135,6 +140,11 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS history
                      (id INTEGER PRIMARY KEY, player_id INTEGER, points_added INTEGER, 
                       total_after INTEGER, timestamp TEXT, FOREIGN KEY(player_id) REFERENCES players(id))''')
+        # Pot tracker table
+        cur.execute('''CREATE TABLE IF NOT EXISTS pots
+                     (id INTEGER PRIMARY KEY, player_id INTEGER, pot_count INTEGER DEFAULT 0,
+                      session_date DATE DEFAULT CURRENT_DATE, 
+                      UNIQUE(player_id, session_date), FOREIGN KEY(player_id) REFERENCES players(id))''')
         logger.info("SQLite tables created")
     
     # Add sample players if database is empty
@@ -482,6 +492,124 @@ def get_player_details(player_id):
             'timestamp': h['timestamp']
         } for h in history]
     })
+
+# ===== POT TRACKER ENDPOINTS =====
+
+@app.route('/api/pots', methods=['GET'])
+def get_pots():
+    """Get pot counts for today"""
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
+    if is_postgres:
+        query = '''SELECT p.id, p.name, COALESCE(pt.pot_count, 0) as pot_count
+                   FROM players p
+                   LEFT JOIN pots pt ON p.id = pt.player_id AND pt.session_date = CURRENT_DATE
+                   ORDER BY COALESCE(pt.pot_count, 0) DESC, p.name'''
+    else:
+        query = '''SELECT p.id, p.name, COALESCE(pt.pot_count, 0) as pot_count
+                   FROM players p
+                   LEFT JOIN pots pt ON p.id = pt.player_id AND pt.session_date = DATE('now')
+                   ORDER BY COALESCE(pt.pot_count, 0) DESC, p.name'''
+    
+    pots = execute_query(query, fetch=True)
+    total_pots = sum(p['pot_count'] for p in pots)
+    
+    return jsonify({
+        'pots': pots,
+        'total_pots': total_pots,
+        'date': datetime.now().strftime('%Y-%m-%d')
+    })
+
+@app.route('/api/pots/<int:player_id>/add', methods=['POST'])
+def add_pot(player_id):
+    """Add a pot for a player (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
+    if is_postgres:
+        # Try to insert or update using ON CONFLICT
+        execute_query('''INSERT INTO pots (player_id, pot_count, session_date)
+                        VALUES (%s, 1, CURRENT_DATE)
+                        ON CONFLICT (player_id, session_date)
+                        DO UPDATE SET pot_count = pots.pot_count + 1''',
+                     (player_id,), commit=True)
+    else:
+        # SQLite version
+        execute_query('''INSERT INTO pots (player_id, pot_count, session_date)
+                        VALUES (?, 1, DATE('now'))
+                        ON CONFLICT(player_id, session_date)
+                        DO UPDATE SET pot_count = pot_count + 1''',
+                     (player_id,), commit=True)
+    
+    return jsonify({'success': True}), 200
+
+@app.route('/api/pots/<int:player_id>/remove', methods=['POST'])
+def remove_pot(player_id):
+    """Remove a pot from a player (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
+    if is_postgres:
+        execute_query('''UPDATE pots SET pot_count = GREATEST(pot_count - 1, 0)
+                        WHERE player_id = %s AND session_date = CURRENT_DATE''',
+                     (player_id,), commit=True)
+    else:
+        execute_query('''UPDATE pots SET pot_count = MAX(pot_count - 1, 0)
+                        WHERE player_id = ? AND session_date = DATE('now')''',
+                     (player_id,), commit=True)
+    
+    return jsonify({'success': True}), 200
+
+@app.route('/api/pots/reset', methods=['POST'])
+def reset_pots():
+    """Reset all pots for today (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
+    if is_postgres:
+        execute_query('DELETE FROM pots WHERE session_date = CURRENT_DATE', commit=True)
+    else:
+        execute_query("DELETE FROM pots WHERE session_date = DATE('now')", commit=True)
+    
+    return jsonify({'success': True}), 200
+
+@app.route('/api/pots/history', methods=['GET'])
+def get_pot_history():
+    """Get pot history by date"""
+    is_postgres = DATABASE_URL and HAS_POSTGRES
+    
+    if is_postgres:
+        query = '''SELECT pt.session_date, p.name, pt.pot_count
+                   FROM pots pt
+                   JOIN players p ON pt.player_id = p.id
+                   WHERE pt.pot_count > 0
+                   ORDER BY pt.session_date DESC, pt.pot_count DESC
+                   LIMIT 100'''
+    else:
+        query = '''SELECT pt.session_date, p.name, pt.pot_count
+                   FROM pots pt
+                   JOIN players p ON pt.player_id = p.id
+                   WHERE pt.pot_count > 0
+                   ORDER BY pt.session_date DESC, pt.pot_count DESC
+                   LIMIT 100'''
+    
+    history = execute_query(query, fetch=True)
+    
+    # Group by date
+    grouped = {}
+    for h in history:
+        date = str(h['session_date'])
+        if date not in grouped:
+            grouped[date] = []
+        grouped[date].append({'name': h['name'], 'pot_count': h['pot_count']})
+    
+    return jsonify(grouped)
 
 if __name__ == '__main__':
     init_db()

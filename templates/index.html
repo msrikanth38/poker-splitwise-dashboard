@@ -545,6 +545,148 @@
             box-shadow: var(--shadow);
         }
 
+        /* Tabs */
+        .tabs-container {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .tabs-nav {
+            display: flex;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 0;
+            gap: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .tab-btn.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 12px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Pot Tracker Styles */
+        .pot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pot-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .pot-card:hover {
+            border-color: var(--primary);
+        }
+
+        .pot-card.has-pots {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+        }
+
+        .pot-player-name {
+            font-weight: 700;
+            font-size: 0.9em;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .pot-count {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .pot-card.has-pots .pot-count {
+            color: #d97706;
+        }
+
+        .pot-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .pot-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pot-btn-add {
+            background: var(--success);
+            color: white;
+        }
+
+        .pot-btn-remove {
+            background: var(--danger);
+            color: white;
+        }
+
+        .pot-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .pot-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .pot-total {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
         .activity-list {
             max-height: 150px;
             overflow-y: auto;
@@ -1311,52 +1453,80 @@
         </div>
 
         <!-- Main Players Section -->
-        <div class="main-section">
-            <div class="section-header">
-                <div class="section-title">👥 Leaderboard</div>
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search player..." oninput="filterPlayers()">
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-btn active" onclick="switchTab('leaderboard')">👥 Leaderboard</button>
+                <button class="tab-btn" onclick="switchTab('pots')">🎰 Pot Tracker</button>
+                <button class="tab-btn" onclick="switchTab('settlement')">💸 Settlement</button>
+                <button class="tab-btn" onclick="switchTab('activity')">📊 Activity</button>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div id="tab-leaderboard" class="tab-content active">
+                <div class="section-header">
+                    <div class="section-title">👥 Leaderboard</div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search player..." oninput="filterPlayers()">
+                    </div>
+                </div>
+
+                <div class="add-player-form" id="addPlayerForm">
+                    <input type="text" id="playerInput" placeholder="Enter new player name..." onkeypress="if(event.key==='Enter') addPlayer()">
+                    <button class="btn btn-primary" onclick="addPlayer()">➕ Add Player</button>
+                    <button class="btn btn-export" onclick="exportData()">📥 Export CSV</button>
+                </div>
+
+                <div class="players-grid" id="playersGrid">
+                    <!-- Column Headers -->
+                    <div class="player-header-row">
+                        <div class="col-rank">#</div>
+                        <div class="col-name">Player Name</div>
+                        <div class="col-points">Points</div>
+                        <div class="col-amount">Amount</div>
+                        <div class="col-status">Status</div>
+                        <div class="col-new">New Points</div>
+                    </div>
+                    <div class="empty-state">
+                        <div class="icon">🎲</div>
+                        <p>Loading players...</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="add-player-form" id="addPlayerForm">
-                <input type="text" id="playerInput" placeholder="Enter new player name..." onkeypress="if(event.key==='Enter') addPlayer()">
-                <button class="btn btn-primary" onclick="addPlayer()">➕ Add Player</button>
-                <button class="btn btn-export" onclick="exportData()">📥 Export CSV</button>
-            </div>
-
-            <div class="players-grid" id="playersGrid">
-                <!-- Column Headers -->
-                <div class="player-header-row">
-                    <div class="col-rank">#</div>
-                    <div class="col-name">Player Name</div>
-                    <div class="col-points">Points</div>
-                    <div class="col-amount">Amount</div>
-                    <div class="col-status">Status</div>
-                    <div class="col-new">New Points</div>
+            <!-- Pot Tracker Tab -->
+            <div id="tab-pots" class="tab-content">
+                <div class="section-header">
+                    <div class="section-title">🎰 Today's Pot Tracker</div>
+                    <button class="btn btn-danger" onclick="resetPots()" style="font-size: 0.75em;">🔄 Reset Today</button>
                 </div>
-                <div class="empty-state">
-                    <div class="icon">🎲</div>
-                    <p>Loading players...</p>
+                <div class="pot-summary">
+                    <span>📅 <span id="potDate"></span></span>
+                    <span class="pot-total">Total Pots: <span id="totalPots">0</span></span>
+                </div>
+                <div class="pot-grid" id="potGrid">
+                    <div class="empty-state">
+                        <div class="icon">🎰</div>
+                        <p>Loading pot tracker...</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Settlement Section -->
-        <div class="settlement-section">
-            <div class="section-title">💸 Settlement Summary</div>
-            <p style="color: #64748b; margin-top: 10px;">Who owes whom to settle up</p>
-            <div class="settlement-grid" id="settlementGrid">
-                <!-- Dynamically generated -->
+            <!-- Settlement Tab -->
+            <div id="tab-settlement" class="tab-content">
+                <div class="section-title">💸 Settlement Summary</div>
+                <p style="color: #64748b; margin: 10px 0;">Who owes whom to settle up</p>
+                <div class="settlement-grid" id="settlementGrid">
+                    <!-- Dynamically generated -->
+                </div>
             </div>
-        </div>
 
-        <!-- Recent Activity -->
-        <div class="activity-section">
-            <div class="section-title">📊 Recent Activity</div>
-            <div class="activity-list" id="activityList">
-                <div class="empty-state">
-                    <p>No recent activity</p>
+            <!-- Activity Tab -->
+            <div id="tab-activity" class="tab-content">
+                <div class="section-title">📊 Recent Activity</div>
+                <div class="activity-list" id="activityList">
+                    <div class="empty-state">
+                        <p>No recent activity</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1403,11 +1573,22 @@
         let focusedInputId = null;
         let isAdmin = false;
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'pots') loadPots();
+        }
+
         function init() {
             checkAuthStatus();
             loadPlayers();
             loadStats();
             loadHistory();
+            loadPots();
             setInterval(() => {
                 if (!focusedInputId) {
                     loadPlayers();
@@ -2012,6 +2193,67 @@
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Pot Tracker Functions
+        async function loadPots() {
+            try {
+                const response = await fetch(`${API_URL}/pots`, { credentials: 'include' });
+                const data = await response.json();
+                document.getElementById('potDate').textContent = data.date;
+                document.getElementById('totalPots').textContent = data.total_pots;
+                renderPots(data.pots);
+            } catch (error) {
+                console.error('Error loading pots:', error);
+            }
+        }
+
+        function renderPots(pots) {
+            const grid = document.getElementById('potGrid');
+            if (!pots || pots.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><p>No players</p></div>';
+                return;
+            }
+            grid.innerHTML = pots.map(p => `
+                <div class="pot-card ${p.pot_count > 0 ? 'has-pots' : ''}">
+                    <div class="pot-player-name">${p.name}</div>
+                    <div class="pot-count">${p.pot_count}</div>
+                    ${isAdmin ? `
+                    <div class="pot-actions">
+                        <button class="pot-btn pot-btn-add" onclick="addPot(${p.id})" title="Add Pot">+</button>
+                        <button class="pot-btn pot-btn-remove" onclick="removePot(${p.id})" title="Remove Pot">-</button>
+                    </div>
+                    ` : '<span style="color:#94a3b8;font-size:0.7em;">🔒 Login</span>'}
+                </div>
+            `).join('');
+        }
+
+        async function addPot(playerId) {
+            if (!isAdmin) { showToast('🔒 Admin required', 'error'); return; }
+            try {
+                await fetch(`${API_URL}/pots/${playerId}/add`, { method: 'POST', credentials: 'include' });
+                loadPots();
+                showToast('🎰 Pot added!');
+            } catch (error) { console.error(error); }
+        }
+
+        async function removePot(playerId) {
+            if (!isAdmin) { showToast('🔒 Admin required', 'error'); return; }
+            try {
+                await fetch(`${API_URL}/pots/${playerId}/remove`, { method: 'POST', credentials: 'include' });
+                loadPots();
+                showToast('Pot removed');
+            } catch (error) { console.error(error); }
+        }
+
+        async function resetPots() {
+            if (!isAdmin) { showToast('🔒 Admin required', 'error'); return; }
+            if (!confirm('Reset all pots for today?')) return;
+            try {
+                await fetch(`${API_URL}/pots/reset`, { method: 'POST', credentials: 'include' });
+                loadPots();
+                showToast('🔄 Pots reset!');
+            } catch (error) { console.error(error); }
         }
 
         window.addEventListener('load', init);
