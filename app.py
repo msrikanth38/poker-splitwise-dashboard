@@ -642,8 +642,21 @@ def delete_pot_history(history_id):
     
     execute_query('DELETE FROM pot_history WHERE id = ?', (history_id,), commit=True)
     return jsonify({'success': True}), 200
+
+@app.route('/api/pots/history/<int:history_id>', methods=['PUT'])
+def update_pot_history(history_id):
+    """Update a pot history entry (Admin only)"""
+    if not is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
     
-    return jsonify(grouped)
+    data = request.json
+    new_count = data.get('pot_count', 1)
+    
+    if new_count < 1:
+        return jsonify({'error': 'Pot count must be at least 1'}), 400
+    
+    execute_query('UPDATE pot_history SET pot_count = ? WHERE id = ?', (new_count, history_id), commit=True)
+    return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
     init_db()
