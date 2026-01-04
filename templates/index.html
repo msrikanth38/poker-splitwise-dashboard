@@ -725,8 +725,10 @@
         }
 
         .activity-list-full {
-            max-height: 500px;
+            min-height: 400px;
+            max-height: calc(100vh - 280px);
             overflow-y: auto;
+            padding-right: 5px;
         }
 
         .activity-item {
