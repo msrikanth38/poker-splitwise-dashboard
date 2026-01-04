@@ -2437,12 +2437,19 @@
         }
 
         function showPotEntries(playerName, entries) {
-            const actions = entries.map((e, i) => `Entry ${i+1}: ${e.count} pot(s) [ID:${e.id}]`).join('\\n');
-            const action = prompt(`${playerName}'s pot entries:\\n${actions}\\n\\nEnter ID to delete, or type "edit ID COUNT" to edit:`);
-            if (!action) return;
+            // Build a simple list of entries
+            let msg = playerName + "'s pot entries:\n\n";
+            entries.forEach((e, i) => {
+                msg += "Entry " + (i+1) + ": " + e.count + " pot(s) [ID:" + e.id + "]\n";
+            });
+            msg += "\nOptions:\n• Enter ID to DELETE\n• Type 'e ID COUNT' to EDIT";
             
-            if (action.toLowerCase().startsWith('edit ')) {
-                const parts = action.split(' ');
+            const action = prompt(msg);
+            if (!action || action.trim() === '') return;
+            
+            const trimmed = action.trim().toLowerCase();
+            if (trimmed.startsWith('e ')) {
+                const parts = trimmed.split(/\s+/);
                 if (parts.length >= 3) {
                     const id = parseInt(parts[1]);
                     const count = parseInt(parts[2]);
@@ -2451,26 +2458,54 @@
                         return;
                     }
                 }
-                showToast('❌ Invalid format. Use: edit ID COUNT', 'error');
+                showToast('❌ Use: e ID COUNT (e.g., e 42 2)', 'error');
             } else {
-                const id = parseInt(action);
-                if (!isNaN(id)) {
-                    deletePotHistory(id);
+                const id = parseInt(trimmed);
+                if (!isNaN(id) && id > 0) {
+                    deletePotHistoryDirect(id);
+                } else {
+                    showToast('❌ Enter a valid ID number', 'error');
                 }
             }
         }
 
         async function editPotHistoryById(historyId, newCount) {
             try {
-                await fetch(`${API_URL}/pots/history/${historyId}`, {
+                const resp = await fetch(`${API_URL}/pots/history/${historyId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ pot_count: newCount })
                 });
-                loadPotHistory();
-                showToast('✅ Updated');
-            } catch (error) { console.error(error); }
+                if (resp.ok) {
+                    loadPotHistory();
+                    showToast('✅ Updated');
+                } else {
+                    showToast('❌ Update failed', 'error');
+                }
+            } catch (error) { 
+                console.error(error);
+                showToast('❌ Error updating', 'error');
+            }
+        }
+
+        async function deletePotHistoryDirect(historyId) {
+            if (!confirm('Delete pot entry ID ' + historyId + '?')) return;
+            try {
+                const resp = await fetch(`${API_URL}/pots/history/${historyId}`, { 
+                    method: 'DELETE', 
+                    credentials: 'include' 
+                });
+                if (resp.ok) {
+                    loadPotHistory();
+                    showToast('🗑️ Deleted');
+                } else {
+                    showToast('❌ Delete failed', 'error');
+                }
+            } catch (error) { 
+                console.error(error);
+                showToast('❌ Error deleting', 'error');
+            }
         }
 
         async function editPotHistory(historyId, playerName, currentCount) {
