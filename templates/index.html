@@ -2071,7 +2071,6 @@
             
             const input = document.getElementById(`points-${playerId}`);
             const points = parseInt(input.value) || 0;
-            if (points === 0) { alert('Enter points'); return; }
 
             try {
                 const response = await fetch(`${API_URL}/players/${playerId}/points`, {

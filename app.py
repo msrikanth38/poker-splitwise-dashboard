@@ -329,8 +329,6 @@ def add_points(player_id):
     data = request.json
     points_added = data.get('points', 0)
     
-    if points_added == 0:
-        return jsonify({'error': 'Points cannot be 0'}), 400
     
     # Get current total
     player = execute_query('SELECT base_total FROM players WHERE id = ?', (player_id,), fetchone=True)
