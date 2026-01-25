@@ -2307,13 +2307,15 @@
                                 <tbody>
                                     ${player.history.map((h, i) => {
                                         const date = new Date(h.timestamp);
+                                        // 0 points is a win (green)
+                                        const isWin = h.points_added > 0 || h.points_added === 0;
                                         return `
-                                        <tr class="${h.points_added > 0 ? 'row-win' : 'row-loss'}">
+                                        <tr class="${isWin ? 'row-win' : 'row-loss'}">
                                             <td>${player.history.length - i}</td>
                                             <td>${date.toLocaleDateString()}</td>
                                             <td>${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
                                             <td>
-                                                <span class="change-badge ${h.points_added > 0 ? 'positive' : 'negative'}">
+                                                <span class="change-badge ${isWin ? 'positive' : 'negative'}">
                                                     ${h.points_added > 0 ? '+' : ''}${h.points_added}
                                                 </span>
                                             </td>
